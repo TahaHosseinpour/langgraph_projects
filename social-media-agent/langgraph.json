@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "social_media": "./my_agent/agent.py:graph"
+  },
+  "env": ".env"
+}

@@ -1,0 +1,23 @@
+# Environment variables (keep .env.example, ignore real secrets)
+.env
+
+# Claude tooling
+.claude/
+skills-lock.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# LangGraph local cache
+.langgraph_api/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
