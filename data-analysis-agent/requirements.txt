@@ -2,5 +2,9 @@ langgraph>=0.2.0
 langchain-core>=0.3.0
 langchain-openai>=0.2.0
 pandas>=2.0.0
+scipy>=1.11.0
 python-dotenv>=1.0.0
 ipython>=8.0.0
+
+# LangGraph Studio (local dev server, no Docker required)
+langgraph-cli[inmem]>=0.1.55

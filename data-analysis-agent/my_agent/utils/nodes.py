@@ -11,7 +11,7 @@ from my_agent.utils.tools import run_python
 
 # base_url is read from OPENAI_BASE_URL so a custom/compatible endpoint can be used.
 model = ChatOpenAI(
-    model="gpt-4o",
+    model=os.getenv("OPENAI_MODEL", "gpt-4o"),
     temperature=0,
     base_url=os.getenv("OPENAI_BASE_URL"),
 )
@@ -54,7 +54,7 @@ def generate_hypothesis(state: DataAnalysisState) -> dict:
     response = model.invoke(
         [system, HumanMessage(content=f"Question: {state['question']}\n\n{preview}")]
     )
-    hypothesis = response.text()
+    hypothesis = response.text
     return {
         "hypothesis": hypothesis,
         "iteration_count": 0,
@@ -67,7 +67,7 @@ def analyze_data(state: DataAnalysisState) -> dict:
     preview = _data_preview(state["data_path"])
 
     # Include the previous error (if any) so the model can self-correct.
-    last_result = state["analysis_result"][-1] if state["analysis_result"] else ""
+    last_result = state.get("analysis_result", [""])[-1] if state.get("analysis_result") else ""
     retry_hint = ""
     if last_result.startswith(("Error", "Failed")):
         retry_hint = f"\n\nThe previous attempt failed:\n{last_result}\nFix it."
@@ -87,12 +87,12 @@ def analyze_data(state: DataAnalysisState) -> dict:
             ),
         ]
     )
-    code = _strip_code_fences(response.text())
+    code = _strip_code_fences(response.text)
     result = run_python.invoke({"code": code, "data_path": state["data_path"]})
     return {
         "analysis_code": code,
         "analysis_result": [result],
-        "iteration_count": state["iteration_count"] + 1,
+        "iteration_count": state.get("iteration_count", 0) + 1,
         "messages": [AIMessage(content=f"Analysis result:\n{result}")],
     }
 
@@ -120,13 +120,15 @@ def write_report(state: DataAnalysisState) -> dict:
             ),
         ]
     )
-    return {"report": response.text()}
+    return {"report": response.text}
 
 
 def should_reanalyze(state: DataAnalysisState) -> str:
     """Decide whether to retry the analysis or write the report."""
-    last_result = state["analysis_result"][-1] if state["analysis_result"] else ""
+    results = state.get("analysis_result", [])
+    last_result = results[-1] if results else ""
     failed = last_result.startswith(("Error", "Failed"))
-    if failed and state["iteration_count"] < state["max_iterations"]:
+    max_iter = state.get("max_iterations", 2)
+    if failed and state.get("iteration_count", 0) < max_iter:
         return "retry"
     return "report"

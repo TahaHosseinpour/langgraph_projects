@@ -1,7 +1,7 @@
 """State definitions for the data analysis agent."""
 
 import operator
-from typing import Annotated, TypedDict
+from typing import Annotated, Optional, TypedDict
 
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
@@ -30,4 +30,4 @@ class DataAnalysisState(TypedDict):
 
     # Control flow
     iteration_count: int  # How many analysis attempts we have made
-    max_iterations: int  # Maximum number of attempts allowed
+    max_iterations: Optional[int]  # Maximum attempts; defaults to 2 if not provided

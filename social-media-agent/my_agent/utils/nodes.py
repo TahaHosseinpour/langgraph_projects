@@ -16,7 +16,7 @@ MAX_CONDENSE_ATTEMPTS = 3
 
 # base_url is read from OPENAI_BASE_URL so a custom/compatible endpoint can be used.
 model = ChatOpenAI(
-    model="gpt-4o",
+    model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
     temperature=0.3,
     base_url=os.getenv("OPENAI_BASE_URL"),
 )
@@ -51,7 +51,7 @@ def generate_report(state: GeneratePostState) -> dict:
         )
     )
     response = model.invoke([system, HumanMessage(content=combined)])
-    return {"report": response.text()}
+    return {"report": response.text}
 
 
 def generate_post(state: GeneratePostState) -> dict:
@@ -64,7 +64,7 @@ def generate_post(state: GeneratePostState) -> dict:
         )
     )
     response = model.invoke([system, HumanMessage(content=state["report"])])
-    return {"post": response.text().strip()}
+    return {"post": response.text.strip()}
 
 
 def condense_post(state: GeneratePostState) -> dict:
@@ -77,8 +77,8 @@ def condense_post(state: GeneratePostState) -> dict:
     )
     response = model.invoke([system, HumanMessage(content=state["post"])])
     return {
-        "post": response.text().strip(),
-        "condense_count": state["condense_count"] + 1,
+        "post": response.text.strip(),
+        "condense_count": state.get("condense_count", 0) + 1,
     }
 
 
@@ -107,8 +107,8 @@ def schedule_post(state: GeneratePostState) -> dict:
 
 def needs_condense(state: GeneratePostState) -> str:
     """Decide whether the post must be condensed further."""
-    too_long = len(state["post"]) > MAX_POST_LENGTH
-    attempts_left = state["condense_count"] < MAX_CONDENSE_ATTEMPTS
+    too_long = len(state.get("post", "")) > MAX_POST_LENGTH
+    attempts_left = state.get("condense_count", 0) < MAX_CONDENSE_ATTEMPTS
     if too_long and attempts_left:
         return "condense"
     return "review"

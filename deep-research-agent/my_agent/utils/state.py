@@ -1,7 +1,7 @@
 """State definitions for the deep research agent."""
 
 import operator
-from typing import Annotated, TypedDict
+from typing import Annotated, Optional, TypedDict
 
 
 class SearchResult(TypedDict):
@@ -32,4 +32,4 @@ class ResearchState(TypedDict):
 
     # Control flow
     iteration_count: int  # How many research loops we have run
-    max_iterations: int  # Maximum number of loops allowed
+    max_iterations: Optional[int]  # Maximum loops; defaults to 1 if not provided

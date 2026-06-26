@@ -11,7 +11,7 @@ from my_agent.utils.tools import web_search
 # Shared model instance used by every node.
 # base_url is read from OPENAI_BASE_URL so a custom/compatible endpoint can be used.
 model = ChatOpenAI(
-    model="gpt-4o",
+    model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
     temperature=0,
     base_url=os.getenv("OPENAI_BASE_URL"),
 )
@@ -28,7 +28,7 @@ def plan_research(state: ResearchState) -> dict:
         )
     )
     response = model.invoke([system, HumanMessage(content=f"Topic: {state['topic']}")])
-    text = response.text()
+    text = response.text
 
     # Split the plan from the queries on the '---' separator.
     plan, _, queries_block = text.partition("---")
@@ -54,24 +54,47 @@ def run_search(state: ResearchState) -> dict:
 
 
 def synthesize(state: ResearchState) -> dict:
-    """Summarize the collected search results into findings."""
-    combined = "\n\n".join(
-        f"Query: {r['query']}\n{r['content']}" for r in state["search_results"]
-    )
+    """Update the running findings using the latest search results.
+
+    Only the most recent batch of results is fed in (plus the prior findings)
+    so the prompt does not grow without bound across loops.
+    """
+    recent = state["search_results"][-3:]
+    combined = "\n\n".join(f"Query: {r['query']}\n{r['content']}" for r in recent)
+    prior = state.get("findings", "")
+
     system = SystemMessage(
         content=(
-            "You are a research analyst. Summarize the search results below into "
-            "clear, factual findings about the topic. Explicitly note any gaps "
+            "You are a research analyst. Update the running findings using the "
+            "new search results. Keep it factual and explicitly note any gaps "
             "that still need more research."
         )
     )
-    response = model.invoke(
-        [system, HumanMessage(content=f"Topic: {state['topic']}\n\nResults:\n{combined}")]
-    )
-    return {
-        "findings": response.text(),
-        "iteration_count": state["iteration_count"] + 1,
-    }
+    try:
+        response = model.invoke(
+            [
+                system,
+                HumanMessage(
+                    content=(
+                        f"Topic: {state['topic']}\n\n"
+                        f"Existing findings:\n{prior or '(none yet)'}\n\n"
+                        f"New results:\n{combined}"
+                    )
+                ),
+            ]
+        )
+        return {
+            "findings": response.text,
+            "iteration_count": state["iteration_count"] + 1,
+        }
+    except Exception as exc:  # noqa: BLE001 - stay fault-tolerant on model errors
+        # If the model call fails, keep the findings we already have and stop
+        # looping (by maxing out the counter) so write_report still runs.
+        fallback = prior or f"Synthesis failed before any findings were collected: {exc}"
+        return {
+            "findings": fallback,
+            "iteration_count": state.get("max_iterations", 1),
+        }
 
 
 def refine_queries(state: ResearchState) -> dict:
@@ -92,7 +115,7 @@ def refine_queries(state: ResearchState) -> dict:
     )
     queries = [
         line.strip("- ").strip()
-        for line in response.text().splitlines()
+        for line in response.text.splitlines()
         if line.strip()
     ]
     return {"search_queries": queries[:2] or [state["topic"]]}
@@ -115,11 +138,12 @@ def write_report(state: ResearchState) -> dict:
             ),
         ]
     )
-    return {"final_report": response.text()}
+    return {"final_report": response.text}
 
 
 def should_continue(state: ResearchState) -> str:
     """Decide whether to run another research loop or write the report."""
-    if state["iteration_count"] < state["max_iterations"]:
+    max_iter = state.get("max_iterations", 1)
+    if state.get("iteration_count", 0) < max_iter:
         return "refine"
     return "write"

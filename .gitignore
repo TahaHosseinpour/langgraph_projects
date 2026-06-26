@@ -1,6 +1,9 @@
 # Environment variables (keep .env.example, ignore real secrets)
 .env
 
+# Throwaway local test script with hardcoded keys
+test_model.py
+
 # Claude tooling
 .claude/
 skills-lock.json
