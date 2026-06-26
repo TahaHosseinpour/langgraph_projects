@@ -1,0 +1,12 @@
+# Secrets
+.env
+
+# Generated presentations (and vendored JS libs)
+presentations/
+
+# Generated graph diagrams
+images/
+
+# Python cache
+__pycache__/
+*.pyc

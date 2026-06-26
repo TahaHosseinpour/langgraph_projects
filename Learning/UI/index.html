@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LangGraph Slide Agent</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Top bar ─────────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon">◈</span>
+      <span class="brand-name">LangGraph Slide Agent</span>
+    </div>
+    <div class="topbar-right">
+      <select class="graph-select" id="graphSelect">
+        <option value="1">Graph 1 — Basic</option>
+        <option value="2">Graph 2 — Conditional Edges</option>
+        <option value="3">Graph 3 — Human in the Loop</option>
+        <option value="4">Graph 4 — Time Travel</option>
+        <option value="5">Graph 5 — Long-term Memory</option>
+        <option value="6">Graph 6 — Streaming</option>
+      </select>
+      <span class="feature-badge hidden" id="featureBadge"></span>
+    </div>
+  </header>
+
+  <!-- ── Main layout ─────────────────────────────────────────────────── -->
+  <main class="layout">
+
+    <!-- Left panel -->
+    <aside class="panel-left">
+
+      <!-- Chat messages -->
+      <div class="chat-scroll" id="chatScroll">
+        <div class="chat-messages" id="chatMessages">
+          <div class="msg msg-assistant">
+            <div class="msg-bubble">
+              Select a graph, fill in the form, and click <strong>Generate</strong>.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generation form -->
+      <form class="gen-form" id="genForm" autocomplete="off">
+
+        <div class="form-group">
+          <label class="form-label" for="inputTopic">Topic</label>
+          <input class="form-input" id="inputTopic" type="text"
+                 placeholder="e.g. Introduction to LangGraph" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputAudience">Audience</label>
+          <input class="form-input" id="inputAudience" type="text"
+                 placeholder="e.g. Software developers" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="inputTone">Tone</label>
+            <select class="form-input" id="inputTone">
+              <option value="technical">Technical</option>
+              <option value="formal">Formal</option>
+              <option value="casual">Casual</option>
+            </select>
+          </div>
+          <div class="form-group form-group-sm">
+            <label class="form-label" for="inputSlides">Slides</label>
+            <input class="form-input" id="inputSlides" type="number"
+                   value="6" min="3" max="15" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputPreferences">Your instructions (optional)</label>
+          <textarea class="form-input" id="inputPreferences" rows="3"
+                    placeholder="Tell the agent anything: emphasis, examples, style, colors, things to avoid…"></textarea>
+        </div>
+
+        <button class="btn-generate" id="btnGenerate" type="submit">
+          <span class="btn-text" id="btnText">Generate</span>
+          <span class="btn-spinner hidden" id="btnSpinner"></span>
+        </button>
+
+      </form>
+    </aside>
+
+    <!-- Right panel -->
+    <section class="panel-right">
+
+      <!-- Graph-specific controls (HITL / Time Travel / Memory) -->
+      <div class="graph-controls hidden" id="graphControls"></div>
+
+      <!-- Streaming progress bar -->
+      <div class="stream-progress hidden" id="streamProgress"></div>
+
+      <!-- Slide preview -->
+      <div class="preview-wrap" id="previewWrap">
+        <div class="preview-toolbar" id="previewToolbar">
+          <select class="preview-select" id="presentationSelect">
+            <option value="">— saved presentations —</option>
+          </select>
+          <button class="preview-refresh" id="btnRefresh" title="Refresh preview">↺</button>
+        </div>
+        <div class="preview-empty" id="previewEmpty">
+          <div class="empty-icon">▶</div>
+          <p>Your presentation will appear here</p>
+        </div>
+        <iframe class="slide-frame hidden" id="slideFrame"
+                sandbox="allow-scripts allow-same-origin"></iframe>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ── HITL Modal ──────────────────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="hitlOverlay">
+    <div class="modal" role="dialog" aria-modal="true">
+
+      <div class="modal-header">
+        <h2 class="modal-title">Review &amp; Edit Presentation</h2>
+        <button class="modal-close" id="hitlClose" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-tabs">
+        <button class="tab-btn active" data-tab="design">Design System</button>
+        <button class="tab-btn" data-tab="slides">Slides</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="tab-pane active" id="tabDesign"></div>
+        <div class="tab-pane hidden"  id="tabSlides"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-primary" id="hitlApprove">Approve &amp; Generate</button>
+        <button class="btn-secondary" id="hitlCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
